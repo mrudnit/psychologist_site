@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply m-0 font-sans antialiased;
+  }
+}
+.neon-text{
+  background: linear-gradient(90deg, #E7E1D7, #D7C9B9, #E7E1D7);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow:
+    0 0 2px rgba(231, 156, 28, 0.9),
+    0 0 10px rgba(255, 198, 99, 0.9),
+    0 0 22px rgba(255, 219, 157, 0.75);
+  animation: neonPulse 2.5s ease-in-out infinite;
+}
+
+
