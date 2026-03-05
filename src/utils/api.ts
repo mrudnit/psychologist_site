@@ -1,4 +1,7 @@
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+const RAW_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+
+// normalize: remove trailing slash to avoid //api/... issues
+const BASE_URL = RAW_BASE_URL.replace(/\/+$/, '')
 
 // Token storage helpers (sessionStorage so it clears on tab close)
 export const auth = {
@@ -23,18 +26,31 @@ async function request<T>(
   const t = token || auth.getToken()
   if (t) headers['Authorization'] = `Bearer ${t}`
 
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method,
-    headers,
-    body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
-  })
+  let res: Response
+  try {
+    res = await fetch(`${BASE_URL}${path}`, {
+      method,
+      headers,
+      body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
+    })
+  } catch (e) {
+    // Network/CORS/DNS/backend down
+    throw new Error('Network error: cannot reach the server. Please try again later.')
+  }
 
-  // If unauthorized, clear token
   if (res.status === 401) {
     auth.clearToken()
   }
 
-  const data = await res.json()
+  // Try to parse JSON, but handle non-JSON responses gracefully
+  let data: any = null
+  const contentType = res.headers.get('content-type') || ''
+  if (contentType.includes('application/json')) {
+    data = await res.json()
+  } else {
+    const text = await res.text()
+    data = { error: text }
+  }
 
   if (!res.ok) {
     throw new Error(data?.error || `Request failed (${res.status})`)
